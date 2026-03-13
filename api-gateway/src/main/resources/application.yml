@@ -1,0 +1,86 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-login
+          uri: http://auth-service:8001
+          predicates:
+            - Path=/api/auth/login
+
+        - id: auth-register
+          uri: http://auth-service:8001
+          predicates:
+            - Path=/api/auth/register
+
+        - id: auth-logout
+          uri: http://auth-service:8001
+          predicates:
+            - Path=/api/auth/logout
+
+        - id: users-service
+          uri: http://auth-service:8001
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - AuthFilter
+
+        - id: email-service
+          uri: http://email-service:8002
+          predicates:
+            - Path=/api/emails/**
+          filters:
+            - AuthFilter
+
+        - id: chat-service
+          uri: http://chat-service:3001
+          predicates:
+            - Path=/api/chat/**
+          filters:
+            - AuthFilter
+
+        - id: calendar-service
+          uri: http://calendar-service:3002
+          predicates:
+            - Path=/api/calendar/**
+          filters:
+            - AuthFilter
+
+        - id: files-service
+          uri: http://file-storage-service:8003
+          predicates:
+            - Path=/api/files/**
+          filters:
+            - AuthFilter
+
+        - id: notifications-service
+          uri: http://notification-service:3003
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - AuthFilter
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    redis:
+      enabled: false
+    defaults:
+      enabled: false
