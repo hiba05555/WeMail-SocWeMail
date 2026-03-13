@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   wemail-network:
     driver: bridge
@@ -26,6 +24,11 @@ services:
       - wemail-network
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wemail"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -36,6 +39,11 @@ services:
       - wemail-network
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   mongodb:
     image: mongo:7
@@ -46,6 +54,11 @@ services:
       - wemail-network
     ports:
       - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio
@@ -76,12 +89,8 @@ services:
       - FILE_SERVICE_URL=http://file-storage-service:8003
       - NOTIFICATION_SERVICE_URL=http://notification-service:3003
     depends_on:
-      - auth-service
-      - email-service
-      - chat-service
-      - calendar-service
-      - file-storage-service
-      - notification-service
+      auth-service:
+        condition: service_started
     networks:
       - wemail-network
 
@@ -96,8 +105,10 @@ services:
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
       - JWT_EXPIRE_MINUTES=60
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -113,9 +124,10 @@ services:
       - MINIO_ACCESS_KEY=wemail
       - MINIO_SECRET_KEY=wemail123
     depends_on:
-      - postgres
-      - redis
-      - minio
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -129,8 +141,10 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -144,8 +158,10 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -161,8 +177,8 @@ services:
       - MINIO_SECRET_KEY=wemail123
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
     depends_on:
-      - postgres
-      - minio
+      postgres:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -179,8 +195,10 @@ services:
       - TWILIO_AUTH_TOKEN=your-twilio-token
       - TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -196,8 +214,10 @@ services:
       - OLLAMA_URL=http://ollama:11434
       - JWT_SECRET=wemail-soc-secret-key-2024
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wemail-network
 
@@ -247,4 +267,3 @@ services:
       - api-gateway
     networks:
       - wemail-network
-
