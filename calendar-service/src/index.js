@@ -1,17 +1,13 @@
 const express = require('express');
-const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
-const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wemail-super-secret-jwt-key-2024';
 
-// PostgreSQL with retry
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://wemail:wemail123@postgres:5432/wemail'
 });
@@ -21,7 +17,6 @@ const connectDB = async (retries = 10) => {
     try {
       await pool.query('SELECT 1');
       console.log('✅ PostgreSQL connected!');
-
       await pool.query(`
         CREATE TABLE IF NOT EXISTS events (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -38,7 +33,6 @@ const connectDB = async (retries = 10) => {
           updated_at TIMESTAMP DEFAULT NOW()
         )
       `);
-      console.log('✅ Events table ready!');
       return;
     } catch (err) {
       console.log(`⏳ Waiting for PostgreSQL... attempt ${i + 1}/${retries}`);
@@ -48,7 +42,6 @@ const connectDB = async (retries = 10) => {
   throw new Error('❌ Could not connect to PostgreSQL');
 };
 
-// Auth middleware
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -60,9 +53,6 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-
-// Get all events for current user
 app.get('/api/calendar/events', verifyToken, async (req, res) => {
   const { month, year } = req.query;
   let query = 'SELECT * FROM events WHERE user_id = $1';
@@ -76,22 +66,18 @@ app.get('/api/calendar/events', verifyToken, async (req, res) => {
   res.json({ events: result.rows });
 });
 
-// Create event
 app.post('/api/calendar/events', verifyToken, async (req, res) => {
   const { title, description, start_time, end_time, location, is_all_day, color, attendees } = req.body;
-  if (!title || !start_time || !end_time) {
+  if (!title || !start_time || !end_time)
     return res.status(400).json({ error: 'title, start_time, end_time are required' });
-  }
   const result = await pool.query(
     `INSERT INTO events (user_id, title, description, start_time, end_time, location, is_all_day, color, attendees)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
     [req.user.sub, title, description, start_time, end_time, location, is_all_day || false, color || '#7C3AED', attendees || []]
   );
-  console.log(`📅 Event created: ${title} by ${req.user.email}`);
   res.status(201).json(result.rows[0]);
 });
 
-// Get single event
 app.get('/api/calendar/events/:id', verifyToken, async (req, res) => {
   const result = await pool.query(
     'SELECT * FROM events WHERE id = $1 AND user_id = $2',
@@ -101,7 +87,6 @@ app.get('/api/calendar/events/:id', verifyToken, async (req, res) => {
   res.json(result.rows[0]);
 });
 
-// Update event
 app.put('/api/calendar/events/:id', verifyToken, async (req, res) => {
   const { title, description, start_time, end_time, location, is_all_day, color, attendees } = req.body;
   const result = await pool.query(
@@ -114,7 +99,6 @@ app.put('/api/calendar/events/:id', verifyToken, async (req, res) => {
   res.json(result.rows[0]);
 });
 
-// Delete event
 app.delete('/api/calendar/events/:id', verifyToken, async (req, res) => {
   const result = await pool.query(
     'DELETE FROM events WHERE id = $1 AND user_id = $2 RETURNING id',
@@ -124,7 +108,6 @@ app.delete('/api/calendar/events/:id', verifyToken, async (req, res) => {
   res.json({ message: 'Event deleted' });
 });
 
-// Get upcoming events (next 7 days)
 app.get('/api/calendar/upcoming', verifyToken, async (req, res) => {
   const result = await pool.query(
     `SELECT * FROM events WHERE user_id = $1
@@ -135,7 +118,6 @@ app.get('/api/calendar/upcoming', verifyToken, async (req, res) => {
   res.json({ events: result.rows });
 });
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'calendar-service', version: '1.0.0' });
 });

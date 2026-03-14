@@ -1,0 +1,30 @@
+.root { position: fixed; inset: 0; background: #0d0f0e; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.card { position: relative; width: 380px; background: rgba(20,22,24,0.85); border: 1px solid rgba(110,233,110,0.2); border-radius: 12px; padding: 36px 32px 28px; backdrop-filter: blur(20px); animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+.shake { animation: shake 0.5s ease !important; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+.cardAccent { position: absolute; top: 0; left: 20px; right: 20px; height: 2px; background: linear-gradient(90deg, transparent, #6EE96E, transparent); border-radius: 1px; }
+.logo { font-family: 'Courier Prime', monospace; font-size: 28px; font-weight: 700; color: #6EE96E; letter-spacing: 0.1em; text-shadow: 0 0 20px rgba(110,233,110,0.4); margin-bottom: 4px; }
+.tagline { font-size: 11px; color: #56575F; letter-spacing: 0.06em; margin-bottom: 28px; min-height: 16px; }
+.cursor { animation: blink 1s step-end infinite; color: #6EE96E; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.form { display: flex; flex-direction: column; gap: 10px; }
+.form input { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #d4d8d4; border-radius: 6px; font-size: 13px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: 'Courier Prime', monospace; }
+.form input:focus { border-color: rgba(110,233,110,0.5); box-shadow: 0 0 0 3px rgba(110,233,110,0.06); }
+.passWrap { display: flex; gap: 8px; align-items: center; }
+.eyeBtn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px; color: #56575F; cursor: pointer; font-size: 14px; transition: background 0.15s; flex-shrink: 0; }
+.eyeBtn:hover { background: rgba(255,255,255,0.08); }
+.errorMsg { color: #e96e6e; font-size: 11px; text-align: center; padding: 6px; background: rgba(233,110,110,0.08); border-radius: 4px; border: 1px solid rgba(233,110,110,0.2); }
+.successMsg { color: #6EE96E; font-size: 11px; text-align: center; padding: 6px; background: rgba(110,233,110,0.06); border-radius: 4px; border: 1px solid rgba(110,233,110,0.2); }
+.submitBtn { margin-top: 6px; padding: 12px; background: transparent; border: 1px solid rgba(110,233,110,0.5); color: #6EE96E; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; font-family: 'Courier Prime', monospace; display: flex; align-items: center; justify-content: center; min-height: 44px; }
+.submitBtn:hover:not(:disabled) { background: rgba(110,233,110,0.1); box-shadow: 0 0 20px rgba(110,233,110,0.2); }
+.submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.toggle { margin-top: 16px; font-size: 11px; color: #56575F; text-align: center; }
+.toggle button { background: none; border: none; color: #93AE96; cursor: pointer; font-family: 'Courier Prime', monospace; font-size: 11px; padding: 0; text-decoration: underline; }
+.toggle button:hover { color: #6EE96E; }
+.pills { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 20; }
+.pill { padding: 4px 12px; border: 1px solid rgba(110,233,110,0.2); border-radius: 20px; font-size: 10px; color: #56575F; letter-spacing: 0.06em; background: rgba(20,22,24,0.6); }
+.watermark { position: fixed; bottom: 8px; left: 16px; font-size: 10px; color: rgba(86,87,95,0.4); z-index: 20; letter-spacing: 0.06em; }
+.scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); pointer-events: none; z-index: 5; }
+.matrixOverlay { position: fixed; inset: 0; background: rgba(0,20,0,0.85); z-index: 15; animation: matrixFade 1.8s ease forwards; display: flex; align-items: center; justify-content: center; }
+@keyframes matrixFade { 0%{opacity:0} 30%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
