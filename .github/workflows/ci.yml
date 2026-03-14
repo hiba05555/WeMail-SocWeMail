@@ -19,9 +19,7 @@ jobs:
       - name: Install dependencies
         run: cd auth-service && pip install -r requirements.txt
       - name: Test imports
-        run: |
-          cd auth-service
-          python -c "from src.security import hash_password, verify_password, create_access_token; print('OK')"
+        run: cd auth-service && python -c "from src.security import hash_password, verify_password, create_access_token; print('OK')"
 
   test-email:
     name: Test Email Service
@@ -34,9 +32,7 @@ jobs:
       - name: Install dependencies
         run: cd email-service && pip install -r requirements.txt
       - name: Test imports
-        run: |
-          cd email-service
-          python -c "from src.schemas import EmailSend, EmailResponse; print('OK')"
+        run: cd email-service && python -c "from src.schemas import EmailSend, EmailResponse; print('OK')"
 
   test-soc:
     name: Test SOC Detection Engine
@@ -49,53 +45,7 @@ jobs:
       - name: Install dependencies
         run: cd soc-platform/backend && pip install -r requirements.txt
       - name: Run detection tests
-        working-directory: soc-platform/backend
-        run: |
-          python - << 'PYEOF'
-from src.detection import analyze
-from datetime import datetime
-
-alerts = []
-for i in range(6):
-    result = analyze({
-        "service": "auth",
-        "event_type": "login_failed",
-        "ip": "192.168.1.100",
-        "email": "test@wemail.io",
-        "details": {},
-        "timestamp": datetime.utcnow()
-    })
-    alerts.extend(result)
-
-bf = [a for a in alerts if a["rule"] == "brute_force"]
-assert len(bf) > 0, "Brute force not detected!"
-print("PASS: Brute force detection OK")
-
-result = analyze({
-    "service": "email",
-    "event_type": "email_sent",
-    "ip": "10.0.0.1",
-    "email": "test@wemail.io",
-    "details": {"subject": "test OR 1=1 --"},
-    "timestamp": datetime.utcnow()
-})
-sqli = [a for a in result if a["rule"] == "sql_injection"]
-assert len(sqli) > 0, "SQLi not detected!"
-print("PASS: SQL Injection detection OK")
-
-result = analyze({
-    "service": "email",
-    "event_type": "email_sent",
-    "ip": "10.0.0.1",
-    "email": "test@wemail.io",
-    "details": {"body": "<script>alert(1)</script>"},
-    "timestamp": datetime.utcnow()
-})
-xss = [a for a in result if a["rule"] == "xss"]
-assert len(xss) > 0, "XSS not detected!"
-print("PASS: XSS detection OK")
-print("ALL TESTS PASSED")
-PYEOF
+        run: cd soc-platform/backend && python tests/test_detection.py
 
   build:
     name: Build Docker Images
@@ -111,11 +61,9 @@ PYEOF
       - name: Build soc-backend
         run: docker build ./soc-platform/backend -t wemail-soc:latest
       - name: Build frontend
-        run: |
-          cd frontend/wemail-frontend
-          npm install
-          npm run build
-          echo "Frontend build OK"
+        run: cd frontend/wemail-frontend && npm install && npm run build
+      - name: Success
+        run: echo "All builds successful"
 
   security:
     name: Security Scan
@@ -123,7 +71,5 @@ PYEOF
     needs: [build]
     steps:
       - uses: actions/checkout@v4
-      - name: Check for hardcoded secrets
-        run: |
-          echo "Scanning for hardcoded secrets..."
-          echo "Security scan complete"
+      - name: Security scan
+        run: echo "Security scan complete"
