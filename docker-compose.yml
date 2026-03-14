@@ -104,6 +104,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
       - JWT_EXPIRE_MINUTES=60
+      - SOC_URL=http://soc-backend:8888
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,6 +124,7 @@ services:
       - MINIO_URL=minio:9000
       - MINIO_ACCESS_KEY=wemail
       - MINIO_SECRET_KEY=wemail123
+      - SOC_URL=http://soc-backend:8888
     depends_on:
       postgres:
         condition: service_healthy
@@ -140,6 +142,7 @@ services:
       - MONGODB_URL=mongodb://mongodb:27017/wemail-chat
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
+      - SOC_URL=http://soc-backend:8888
     depends_on:
       mongodb:
         condition: service_healthy
@@ -157,6 +160,7 @@ services:
       - DATABASE_URL=postgresql://wemail:wemail123@postgres:5432/wemail
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
+      - SOC_URL=http://soc-backend:8888
     depends_on:
       postgres:
         condition: service_healthy
@@ -176,6 +180,7 @@ services:
       - MINIO_ACCESS_KEY=wemail
       - MINIO_SECRET_KEY=wemail123
       - JWT_SECRET=wemail-super-secret-jwt-key-2024
+      - SOC_URL=http://soc-backend:8888
     depends_on:
       postgres:
         condition: service_healthy
@@ -198,6 +203,25 @@ services:
       mongodb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+    networks:
+      - wemail-network
+
+  # ── SOC PLATFORM ────────────────────────────────────────
+  soc-backend:
+    build: ./soc-platform/backend
+    container_name: wemail-soc-backend
+    ports:
+      - "8888:8888"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017/wemail-soc
+      - JWT_SECRET=wemail-soc-secret-key-2024
+      - TWILIO_ACCOUNT_SID=your-twilio-sid
+      - TWILIO_AUTH_TOKEN=your-twilio-token
+      - TWILIO_FROM=your-twilio-number
+      - ALERT_PHONE=your-alert-number
+    depends_on:
+      mongodb:
         condition: service_healthy
     networks:
       - wemail-network

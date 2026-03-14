@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080a09;--bg-panel:#0d0f0e;--bg-card:#111614;--bg-hover:#161a17;
+  --green:#6EE96E;--green-dim:#4aad4a;--green-glow:rgba(110,233,110,0.12);
+  --red:#e96e6e;--amber:#e9c96e;--blue:#6eaee9;--purple:#ae6ee9;
+  --text:#d4d8d4;--text-dim:#7a8a7c;--text-faint:#3a4a3c;
+  --border:rgba(110,233,110,0.1);--border-dim:rgba(255,255,255,0.05);
+  --font:'Courier Prime',monospace;--font-ui:'Space Mono',monospace;--radius:6px;
+}
+html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(110,233,110,0.2)}
+button{font-family:var(--font);cursor:pointer;border:none;background:none;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid var(--border-dim);border-top-color:var(--green);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}

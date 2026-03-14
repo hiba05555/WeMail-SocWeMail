@@ -36,3 +36,5 @@ Thumbs.db
 
 # Ollama models (too large for git)
 ollama-models/
+frontend/wemail-frontend/node_modules/
+frontend/*.zip

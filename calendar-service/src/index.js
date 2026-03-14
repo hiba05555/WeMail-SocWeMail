@@ -7,6 +7,19 @@ const app = express();
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wemail-super-secret-jwt-key-2024';
+const SOC_URL = process.env.SOC_URL || 'http://soc-backend:8888';
+
+const logToSoc = async (event_type, ip, email='', details={}) => {
+  try {
+    const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+    const fn = await fetch;
+    await fn(`${SOC_URL}/api/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service: 'calendar', event_type, ip, email, details })
+    });
+  } catch {}
+};
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://wemail:wemail123@postgres:5432/wemail'
@@ -34,7 +47,7 @@ const connectDB = async (retries = 10) => {
         )
       `);
       return;
-    } catch (err) {
+    } catch {
       console.log(`⏳ Waiting for PostgreSQL... attempt ${i + 1}/${retries}`);
       await new Promise(r => setTimeout(r, 3000));
     }
@@ -45,12 +58,8 @@ const connectDB = async (retries = 10) => {
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
-  try {
-    req.user = jwt.verify(token, JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
-  }
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { res.status(401).json({ error: 'Invalid or expired token' }); }
 };
 
 app.get('/api/calendar/events', verifyToken, async (req, res) => {
@@ -73,8 +82,12 @@ app.post('/api/calendar/events', verifyToken, async (req, res) => {
   const result = await pool.query(
     `INSERT INTO events (user_id, title, description, start_time, end_time, location, is_all_day, color, attendees)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-    [req.user.sub, title, description, start_time, end_time, location, is_all_day || false, color || '#7C3AED', attendees || []]
+    [req.user.sub, title, description, start_time, end_time, location,
+     is_all_day||false, color||'#7C3AED', attendees||[]]
   );
+  await logToSoc('calendar_event_created', req.ip, req.user.email, {
+    title, start_time, end_time
+  });
   res.status(201).json(result.rows[0]);
 });
 
@@ -93,7 +106,8 @@ app.put('/api/calendar/events/:id', verifyToken, async (req, res) => {
     `UPDATE events SET title=$1, description=$2, start_time=$3, end_time=$4,
      location=$5, is_all_day=$6, color=$7, attendees=$8, updated_at=NOW()
      WHERE id=$9 AND user_id=$10 RETURNING *`,
-    [title, description, start_time, end_time, location, is_all_day, color, attendees, req.params.id, req.user.sub]
+    [title, description, start_time, end_time, location,
+     is_all_day, color, attendees, req.params.id, req.user.sub]
   );
   if (result.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
   res.json(result.rows[0]);
