@@ -65,11 +65,88 @@ jobs:
       - name: Success
         run: echo "All builds successful"
 
-  security:
-    name: Security Scan
+  security-scan:
+    name: Security Scan with Trivy
     runs-on: ubuntu-latest
     needs: [build]
     steps:
       - uses: actions/checkout@v4
-      - name: Security scan
-        run: echo "Security scan complete"
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build auth-service for scan
+        run: docker build ./auth-service -t wemail-auth:latest
+
+      - name: Scan auth-service with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wemail-auth:latest
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '0'
+
+      - name: Build soc-backend for scan
+        run: docker build ./soc-platform/backend -t wemail-soc:latest
+
+      - name: Scan soc-backend with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wemail-soc:latest
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '0'
+
+      - name: Scan complete
+        run: echo "Trivy security scan complete"
+
+  sast:
+    name: SAST - Static Code Analysis
+    runs-on: ubuntu-latest
+    needs: [test-auth, test-email, test-soc]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit on auth-service
+        run: bandit -r auth-service/src/ -ll -q || true
+
+      - name: Run Bandit on email-service
+        run: bandit -r email-service/src/ -ll -q || true
+
+      - name: Run Bandit on soc-backend
+        run: bandit -r soc-platform/backend/src/ -ll -q || true
+
+      - name: SAST scan complete
+        run: echo "Bandit SAST scan complete"
+
+  dependency-check:
+    name: Dependency Vulnerability Check
+    runs-on: ubuntu-latest
+    needs: [test-auth, test-email, test-soc]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Check auth-service dependencies
+        run: cd auth-service && pip install -r requirements.txt && safety check || true
+
+      - name: Check email-service dependencies
+        run: cd email-service && pip install -r requirements.txt && safety check || true
+
+      - name: Check soc-backend dependencies
+        run: cd soc-platform/backend && pip install -r requirements.txt && safety check || true
+
+      - name: npm audit frontend
+        run: cd frontend/wemail-frontend && npm install && npm audit --audit-level=critical || true
+
+      - name: Dependency check complete
+        run: echo "Dependency vulnerability check complete"
