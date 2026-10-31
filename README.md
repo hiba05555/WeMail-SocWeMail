@@ -1,102 +1,55 @@
-# WeMail — Enterprise Email Platform + Custom SOC/SIEM
+# WeMail — Plateforme e-mail d'entreprise avec SOC/SIEM intégré
 
-> Plateforme email d'entreprise avec système SOC/SIEM intégré pour la détection d'attaques en temps réel.
+> Plateforme e-mail d'entreprise en microservices, dotée d'un système SOC/SIEM maison qui détecte les attaques en temps réel et envoie des alertes automatiques.
 
-**ENSA Marrakech** — Équipe : Saad · Ismail · Wiam · Hiba · Malika
+![Docker](https://img.shields.io/badge/conteneurs-Docker-2496ED) ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF) ![Security](https://img.shields.io/badge/s%C3%A9curit%C3%A9-SAST%20%2B%20Trivy-red)
+
+Projet d'équipe réalisé à l'**ENSA Marrakech**.
+
+---
+
+## Fonctionnalités
+
+- Messagerie avec pièces jointes (stockage objet)
+- Chat en temps réel et calendrier
+- Notifications
+- **SOC/SIEM** : collecte des journaux de tous les services, détection d'attaques, tableau de bord d'alertes en temps réel et alertes automatiques par e-mail
 
 ---
 
 ## Architecture
 
+```mermaid
+flowchart TD
+    B[Navigateur :5173] --> GW[API Gateway :8080<br/>Spring Boot]
+
+    GW --> AUTH[Auth :8001<br/>FastAPI]
+    GW --> MAIL[Email :8002<br/>FastAPI]
+    GW --> CHAT[Chat :3001<br/>Node.js]
+    GW --> CAL[Calendar :3002<br/>Node.js]
+    GW --> FILES[Files :8003<br/>FastAPI]
+
+    AUTH --> PG[(PostgreSQL)]
+    MAIL --> PG
+    CHAT --> MONGO[(MongoDB)]
+    AUTH --> REDIS[(Redis)]
+    MAIL --> MINIO[(MinIO)]
+    FILES --> MINIO
+
+    AUTH -. logs .-> SOC[SOC Backend :8888]
+    MAIL -. logs .-> SOC
+    CHAT -. logs .-> SOC
+    GW -. logs .-> SOC
+    SOC --> DASH[SOC Dashboard :3100]
+    SOC --> ALERT[Alertes e-mail]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Browser :5173                             │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                    ┌──────▼──────┐
-                    │ API Gateway │  :8080  Spring Boot
-                    └──────┬──────┘
-         ┌─────────┬───────┼────────┬──────────┐
-         ▼         ▼       ▼        ▼          ▼
-    Auth :8001  Email   Chat     Calendar   Files
-    FastAPI    :8002   :3001     :3002      :8003
-               FastAPI Node.js  Node.js    FastAPI
-         │                                      │
-         ▼                                      ▼
-    PostgreSQL                               MinIO
-    MongoDB · Redis
-
-┌─────────────────────────────────────────────────────────────┐
-│                   SOC Platform                               │
-│   SOC Backend :8888  ←  logs de tous les services           │
-│   SOC Dashboard :3100  →  alertes temps réel                │
-│   Email Alerts  →  Gmail notification automatique           │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Prérequis
-
-```bash
-Docker >= 24.0
-Docker Compose >= 2.0
-Node.js >= 18
-Git
-```
-
----
-
-## Installation rapide
-
-```bash
-# 1. Clone le repo
-git clone git@github.com:hiba05555/WeMail-SocWeMail.git
-cd WeMail-SocWeMail
-
-# 2. Lance tous les services backend
-docker compose up -d
-
-# 3. Lance le frontend WeMail
-cd frontend/wemail-frontend
-npm install && npm run dev
-
-# 4. Lance le SOC Dashboard (nouveau terminal)
-cd soc-platform/frontend
-npm install && npm run dev -- --port 3100
-```
-
----
-
-## Accès
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| WeMail Frontend | http://localhost:5173 | Interface utilisateur |
-| SOC Dashboard | http://localhost:3100 | Tableau de bord sécurité |
-| API Gateway | http://localhost:8080 | Point d'entrée API |
-| SOC Backend | http://localhost:8888 | API détection |
-
----
-
-## Comptes de test
-
-| Email | Password | Rôle |
-|-------|----------|------|
-| saad@wemail.io | admin123 | API Gateway |
-| hiba@wemail.io | hiba123 | Email Service |
-| ismail@wemail.io | ismail123 | Auth Service |
-| wiam@wemail.io | wiam123 | Chat & Calendar |
-| malika@wemail.io | malika123 | Files & Notifs |
-
-> Si les comptes n'existent pas encore, utilisez le bouton **Register** sur la page login.
 
 ---
 
 ## Stack technique
 
 | Couche | Technologie |
-|--------|------------|
+|--------|-------------|
 | Frontend | React 18 + Vite |
 | API Gateway | Spring Boot 3.2 + Java 21 |
 | Auth | FastAPI + PostgreSQL + JWT |
@@ -111,16 +64,61 @@ npm install && npm run dev -- --port 3100
 
 ---
 
-## CI/CD Pipeline
+## Sécurité et DevSecOps
+
+Pipeline exécuté à chaque push :
 
 ```
-git push → Tests → SAST (Bandit) → Build Docker → Trivy Scan → Deploy
+Tests → SAST (Bandit) → Build Docker → Scan Trivy → Déploiement
 ```
 
-Voir `.github/workflows/ci.yml`
+Voir `.github/workflows/ci.yml`.
+
+- Authentification par **JWT**
+- Analyse statique du code Python avec **Bandit**
+- Scan des images Docker avec **Trivy**
+- Supervision de sécurité centralisée par le **SOC** maison, alimenté par les journaux de tous les services
 
 ---
 
-## Repo
+## Installation rapide
 
-**https://github.com/hiba05555/WeMail-SocWeMail**
+**Prérequis :** Docker ≥ 24, Docker Compose ≥ 2, Node.js ≥ 18, Git.
+
+```bash
+# 1. Cloner le dépôt
+git clone https://github.com/hiba05555/WeMail-SocWeMail.git
+cd WeMail-SocWeMail
+
+# 2. Lancer tous les services backend
+docker compose up -d
+
+# 3. Lancer le frontend WeMail
+cd frontend/wemail-frontend
+npm install && npm run dev
+
+# 4. Lancer le dashboard SOC (nouveau terminal)
+cd soc-platform/frontend
+npm install && npm run dev -- --port 3100
+```
+
+## Accès
+
+| Service | URL |
+|---------|-----|
+| WeMail (interface) | http://localhost:5173 |
+| SOC Dashboard | http://localhost:3100 |
+| API Gateway | http://localhost:8080 |
+| SOC Backend | http://localhost:8888 |
+
+Pour tester, créez un compte avec le bouton **Register** de la page de connexion. Aucun identifiant n'est fourni dans ce dépôt, volontairement.
+
+---
+
+## Équipe
+
+Projet réalisé à l'ENSA Marrakech par Saad, Ismail, Wiam, Hiba et Malika.
+
+## Contact
+
+**Hiba Chagdaly**, GitHub : [@hiba05555](https://github.com/hiba05555)
